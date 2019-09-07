@@ -1,7 +1,8 @@
 # import the pygame module, so you can use it
 import pygame
 from os import path
- 
+
+#Constants
 GAME_WIDTH = GAME_HEIGHT = 800
 SCREEN_BACKGROUND_COLOR = (96,96,96)
 FRAME_SIZE = 32
@@ -9,48 +10,69 @@ N_FRAMES = GAME_WIDTH // FRAME_SIZE
 COLOR_RED = (255,0,0)
 
 class Game:
+    pass
+    
+class Player:
+    def __init__(self,x,y,width,height,vel):
+        self.x=x
+        self.y=y
+        self.width=width
+        self.height=height
+        self.vel=vel
 
-    def __init__(self):
-        self.gameover = False
+player=Player(32,32,32,32,5)
 
-    def preload(self):
-        pygame.init()
-        self.logo = pygame.image.load(path.join('resources','logo.png'))
-        pygame.display.set_icon(self.logo)
-        pygame.display.set_caption("Grin Route")  
-        self.semaph_red = pygame.image.load(path.join('resources','semaphore-red.png'))
+# this function is used to load all the resources
+def preload():
+    pygame.init()
+    logo = pygame.image.load(path.join("./resources/bike.png"))
+    pygame.display.set_icon(logo)
+    pygame.display.set_caption("Grin Route")
+
+# this function is used to show the player and can do the algorithm
+def update():
+    gameover = False
+
+    # main loop
+    while not gameover:
+
+        pygame.time.delay(50)
+
+        # event handling, gets all event from the event queue
+        for event in pygame.event.get():
+            # only do something if the event is of type QUIT
+            if event.type == pygame.QUIT:
+                # change the value to False, to exit the main loop
+                gameover = True
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_LEFT]:
+            player.x -= player.vel
+
+        if keys[pygame.K_RIGHT]:
+            player.x += player.vel
+
+        if keys[pygame.K_UP]:
+            player.y -= player.vel
+
+        if keys[pygame.K_DOWN]:
+            player.y += player.vel
         
-
-    def create(self):
-        DISPLAY = pygame.display.set_mode((GAME_WIDTH,GAME_HEIGHT))
-        DISPLAY.fill(SCREEN_BACKGROUND_COLOR)
-        #draw frames
-        for i in range(N_FRAMES):
-            for j in range(N_FRAMES):\
-                pygame.draw.rect(DISPLAY,COLOR_RED,(i * FRAME_SIZE,j * FRAME_SIZE,FRAME_SIZE,FRAME_SIZE),1)
-        pos_x = 5 * FRAME_SIZE
-        pos_y = 10 * FRAME_SIZE
-        DISPLAY.blit(self.semaph_red,(pos_x,pos_y))
-        pygame.display.flip()
-
-    def update(self):
-        # main loop
-        while not self.gameover:
-            # event handling, gets all event from the event queue
-            for event in pygame.event.get():
-                # only do something if the event is of type QUIT
-                if event.type == pygame.QUIT:
-                    # change the value to False, to exit the main loop
-                    self.gameover = True
+        # set the size of screen
+        screen = pygame.display.set_mode((GAME_WIDTH,GAME_HEIGHT))
+        # fill is use to paint many times the background
+        screen.fill((0,0,0)) 
+        # paint the player
+        pygame.draw.rect(screen, (255,0,0), (player.x, player.y, player.width, player.height))   
+        # show the player in screen
+        pygame.display.update() 
+        
 
 
 # define a main function
 def main():
-    game = Game()
-    game.preload()
-    game.create()
-    game.update()
-     
+    preload()
+    update()
      
 # run the main function only if this module is executed as the main script
 # (if you import this as a module then nothing is executed)
