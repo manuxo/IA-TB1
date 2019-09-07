@@ -1,30 +1,35 @@
 # import the pygame module, so you can use it
 import pygame
  
-# define a main function
-def main():
-     
-    # initialize the pygame module
+GAME_WIDTH = GAME_HEIGHT = 800
+
+
+def preload():
     pygame.init()
-    # load and set the logo
     logo = pygame.image.load("./resources/bike.png")
     pygame.display.set_icon(logo)
-    pygame.display.set_caption("minimal program")
-     
-    # create a surface on screen that has the size of 240 x 180
-    screen = pygame.display.set_mode((240,180))
-     
-    # define a variable to control the main loop
-    running = True
-     
+    pygame.display.set_caption("Grin Route")
+
+def create():
+    screen = pygame.display.set_mode((800,800))
+
+def update():
+    gameover = False
     # main loop
-    while running:
+    while not gameover:
         # event handling, gets all event from the event queue
         for event in pygame.event.get():
             # only do something if the event is of type QUIT
             if event.type == pygame.QUIT:
                 # change the value to False, to exit the main loop
-                running = False
+                gameover = True
+
+
+# define a main function
+def main():
+    preload()
+    create()
+    update()
      
      
 # run the main function only if this module is executed as the main script
