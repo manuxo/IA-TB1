@@ -4,6 +4,12 @@ import csv
 from random import choice
 from os import path
 
+
+#TB1 Modules
+from tb1util.Enums import GridItemType,Direction
+from tb1util.Spritesheet import SpriteSheet
+
+
 #Constants
 GAME_WIDTH = GAME_HEIGHT = 800
 SCREEN_BACKGROUND_COLOR = (48,51,49)
@@ -17,42 +23,8 @@ DELAY = 50
 DEBUG = True
 PLAYER_COLORKEY = (69,242,39)
 
-class SpriteSheet(object):
-    def __init__(self, filename):
-        self.sheet = pygame.image.load(filename).convert()
-    # Load a specific image from a specific rectangle
-    def image_at(self, rectangle, colorkey = None):
-        "Loads image from x,y,x+offset,y+offset"
-        rect = pygame.Rect(rectangle)
-        image = pygame.Surface(rect.size).convert()
-        image.blit(self.sheet, (0, 0), rect)
-        if colorkey is not None:
-            if colorkey is -1:
-                colorkey = image.get_at((0,0))
-            image.set_colorkey(colorkey, pygame.RLEACCEL)
-        return image
-    # Load a whole bunch of images and return them as a list
-    def images_at(self, rects, colorkey = None):
-        "Loads multiple images, supply a list of coordinates" 
-        return [self.image_at(rect, colorkey) for rect in rects]
-    # Load a whole strip of images
-    def load_strip(self, rect, image_count, colorkey = None):
-        "Loads a strip of images and returns them as a list"
-        tups = [(rect[0]+rect[2]*x, rect[1], rect[2], rect[3])
-                for x in range(image_count)]
-        return self.images_at(tups, colorkey)
-
-class Direction:
-    LEFT,RIGHT,DOWN,UP = range(4)
 
 
-class GridItemType:
-    NONE = 0
-    ROAD = 1
-    GROUND = 2
-    SEMAPH_GREEN = 3
-    SEMAPH_RED = 4
-    TARGET = 5
 
 class GridItem:
     def __init__(self,x,y,width,height):
@@ -141,9 +113,6 @@ class Game:
                     self.screen.blit(self.semaph_red,(pos_x,pos_y))
                 if debug:
                     pygame.draw.rect(self.screen,COLOR_RED,(pos_x,pos_y,FRAME_SIZE,FRAME_SIZE),1)
-        
-
-
 
     def preload(self):
         #Init game
