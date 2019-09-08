@@ -52,7 +52,41 @@ class Player(GridItem):
                 b = a + 3
                 self.images[dir] = self.spritesheet.images_at(frames[a:b],PLAYER_COLORKEY)
     
-    def move(self):
+    def move(self,player,screen):
+        if self.direction == Direction.LEFT:
+            for i in range(8):
+                self.x -= self.vel
+                player.blit_on(screen,DEBUG)
+                pygame.display.update()
+                pygame.time.delay(DELAY)
+
+        if self.direction == Direction.RIGHT:
+            for i in range(8):
+                self.x += self.vel
+                pygame.display.update()
+                player.blit_on(screen,DEBUG)
+                pygame.time.delay(DELAY)
+
+        if self.direction == Direction.UP:
+            for i in range(8):
+                self.y -= self.vel
+                pygame.display.update()
+                player.blit_on(screen,DEBUG)
+                pygame.time.delay(DELAY)
+
+        if self.direction == Direction.DOWN:
+            for i in range(8):
+                self.y += self.vel
+                pygame.display.update()
+                player.blit_on(screen,DEBUG)
+                pygame.time.delay(DELAY)
+
+        if self.frameIndex < 2:
+            self.frameIndex += 1
+        else:
+            self.frameIndex = 0
+
+        """
         if self.direction == Direction.UP:
             self.y -= self.vel
         elif self.direction == Direction.DOWN:
@@ -61,12 +95,9 @@ class Player(GridItem):
             self.x -= self.vel
         elif self.direction == Direction.RIGHT:
             self.x += self.vel
-        
-        if self.frameIndex < 2:
-            self.frameIndex += 1
-        else:
-            self.frameIndex = 0
-        
+        """
+
+
     def stop(self):
         self.frameIndex = 0
 
@@ -127,7 +158,7 @@ class Game:
         self.ss_player = SpriteSheet(path.join('resources','player.png'))
 
         #Create instances
-        self.player=Player(0*FRAME_SIZE,0*FRAME_SIZE,FRAME_SIZE,FRAME_SIZE,3.889,self.ss_player)
+        self.player=Player(0*FRAME_SIZE,0*FRAME_SIZE,FRAME_SIZE,FRAME_SIZE,4,self.ss_player)
 
         pygame.display.set_icon(self.logo)
         pygame.display.set_caption("Grin Route")
@@ -140,40 +171,23 @@ class Game:
 
     def update(self):
         c = 1
-        #path=[]
-        
-        path = [Direction.DOWN,Direction.DOWN,Direction.DOWN,Direction.DOWN,\
-            Direction.RIGHT,Direction.RIGHT,Direction.UP,Direction.RIGHT,Direction.RIGHT,\
-            Direction.RIGHT,Direction.DOWN,Direction.LEFT,Direction.LEFT,Direction.DOWN,Direction.DOWN,\
-            Direction.UP,Direction.UP,Direction.LEFT,Direction.LEFT,Direction.DOWN,Direction.DOWN]
-        
+        path = [Direction.DOWN,Direction.DOWN,Direction.DOWN,Direction.DOWN,Direction.RIGHT,Direction.RIGHT,Direction.UP,Direction.RIGHT]
+        self.player.direction = path.pop(0)
 
         while not self.gameover:
             pygame.time.delay(DELAY)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.gameover = True
-
-                # click event and get the position
-                if event.type ==pygame.MOUSEBUTTONDOWN:
-                    mx,my=pygame.mouse.get_pos()
-                    mx=int(mx/32)*32
-                    my=int(my/32)*32
-                    print (mx,my)
-                
             
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_LEFT]:
-                pass
-            if keys[pygame.K_RIGHT]:
-                pass
-
+            
             self.screen.fill(SCREEN_BACKGROUND_COLOR)
             self.printScenario(DEBUG)
-
+            
             move = True
-            if path != None and len(path) > 0:
-                if c == 10:
+            if len(path) > 0:
+                if c == 8:
                     self.player.direction = path.pop(0)
                     move = False
                     self.player.stop()
@@ -184,9 +198,10 @@ class Game:
                 c = 1
             
             if move:
-                self.player.move()
-            
-            
+                self.player.move(self.player,self.screen)
+
+            #keys = pygame.key.get_pressed()
+
             self.player.blit_on(self.screen,DEBUG)
             pygame.display.update()
 
@@ -200,5 +215,3 @@ def main():
 
 if __name__=="__main__":
     main()
-
-
