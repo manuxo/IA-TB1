@@ -1,17 +1,23 @@
 # import the pygame module, so you can use it
 import pygame
+import csv
+from random import choice
 from os import path
 
 #Constants
 GAME_WIDTH = GAME_HEIGHT = 800
-SCREEN_BACKGROUND_COLOR = (96,96,96)
+SCREEN_BACKGROUND_COLOR = (48,51,49)
 FRAME_SIZE = 32
 N_FRAMES = GAME_WIDTH // FRAME_SIZE
 COLOR_RED = (255,0,0)
+COLOR_BLUE = (0,0,255)
+COLOR_GREEN = (7, 138, 35)
+COLOR_ROAD = (48,51,49)
 DELAY = 50
+DEBUG = True
+PLAYER_COLORKEY = (69,242,39)
 
-
-class spritesheet(object):
+class SpriteSheet(object):
     def __init__(self, filename):
         self.sheet = pygame.image.load(filename).convert()
     # Load a specific image from a specific rectangle
@@ -36,25 +42,108 @@ class spritesheet(object):
                 for x in range(image_count)]
         return self.images_at(tups, colorkey)
 
-class Player:
-    def __init__(self,x,y,width,height,vel):
+class Direction:
+    LEFT,RIGHT,DOWN,UP = range(4)
+
+
+class GridItemType:
+    NONE = 0
+    ROAD = 1
+    GROUND = 2
+    SEMAPH_GREEN = 3
+    SEMAPH_RED = 4
+    TARGET = 5
+
+class GridItem:
+    def __init__(self,x,y,width,height):
         self.x=x
         self.y=y
         self.width=width
         self.height=height
+
+class Player(GridItem):
+    def __init__(self,x,y,width,height,vel,spritesheet = None,direction = Direction.RIGHT, frameIndex = 0):
+        super().__init__(x,y,width,height)
         self.vel=vel
+        self.direction = direction
+        self.frameIndex = frameIndex
+        self.spritesheet = spritesheet
+
+        if self.spritesheet is not None:
+            frames = []
+            for i in range(15):
+                frames.append((i*FRAME_SIZE,0,FRAME_SIZE,FRAME_SIZE))
+
+            self.images = [None] * 4
+            for dir in [Direction.LEFT,Direction.RIGHT,Direction.DOWN,Direction.UP]:
+                a = dir * 3
+                b = a + 3
+                self.images[dir] = self.spritesheet.images_at(frames[a:b],PLAYER_COLORKEY)
+    
+    def move(self):
+        if self.direction == Direction.UP:
+            self.y -= self.vel
+        elif self.direction == Direction.DOWN:
+            self.y += self.vel
+        elif self.direction == Direction.LEFT:
+            self.x -= self.vel
+        elif self.direction == Direction.RIGHT:
+            self.x += self.vel
+        
+        if self.frameIndex < 2:
+            self.frameIndex += 1
+        else:
+            self.frameIndex = 0
+
+    def stop(self):
+        self.frameIndex = 0
+
+    def blit_on(self,screen,debug = False):
+        if self.images is not None:
+            screen.blit(self.images[self.direction][self.frameIndex],(self.x, self.y))
+        if debug:
+            pygame.draw.rect(screen,COLOR_BLUE,(self.x,self.y,FRAME_SIZE,FRAME_SIZE),1)
+
+    
 
 
 class Game:
     def __init__(self):
         self.gameover = False
         self.player = None
-    
+        self.readScenario()
 
-    def printGrid(self):
+    def readScenario(self,level = 1):
+        with open(path.join('resources','maps',f'map{level}.csv'),'r') as csvFile:
+            reader = csv.reader(csvFile)
+            self.scenario = [[0 for i in range(N_FRAMES)] for j in range(N_FRAMES)] 
+            for i,row in enumerate(reader):
+                for j,gridValue in enumerate(row):
+                    self.scenario[i][j] = int(gridValue)
+            for row in self.scenario:
+                print(row)
+
+        csvFile.close()
+
+    def printScenario(self,debug = False):
         for i in range(N_FRAMES):
             for j in range(N_FRAMES):
-                pygame.draw.rect(self.screen,COLOR_RED,(i * FRAME_SIZE,j * FRAME_SIZE,FRAME_SIZE,FRAME_SIZE),1)
+                value = self.scenario[i][j]
+                pos_x = i * FRAME_SIZE
+                pos_y = j * FRAME_SIZE
+                if value == GridItemType.ROAD:
+                    pygame.draw.rect(self.screen,COLOR_ROAD,(pos_x,pos_y,FRAME_SIZE,FRAME_SIZE))
+                elif value == GridItemType.GROUND:
+                    pygame.draw.rect(self.screen,COLOR_GREEN,(pos_x,pos_y,FRAME_SIZE,FRAME_SIZE))
+                elif value == GridItemType.SEMAPH_GREEN:
+                    self.screen.blit(self.semaph_green,(pos_x,pos_y))
+                elif value == GridItemType.SEMAPH_RED:
+                    self.screen.blit(self.semaph_red,(pos_x,pos_y))
+                if debug:
+                    pygame.draw.rect(self.screen,COLOR_RED,(pos_x,pos_y,FRAME_SIZE,FRAME_SIZE),1)
+        
+
+
 
     def preload(self):
         #Init game
@@ -66,27 +155,10 @@ class Game:
         self.logo = pygame.image.load(path.join('resources','logo.png'))
         self.semaph_red = pygame.image.load(path.join('resources','semaphore-red.png'))
         self.semaph_green = pygame.image.load(path.join('resources','semaphore-green.png'))
-
-        self.ss_player = spritesheet(path.join('resources','player.png'))
-
-        rects = []
-        for i in range(15):
-            rects.append((i*FRAME_SIZE,0,FRAME_SIZE,FRAME_SIZE))
-        
-
-        #LEFT
-        self.images_player_left = self.ss_player.images_at(rects[0:3],(7,242,169))
-        #RIGHT
-        self.images_player_right = self.ss_player.images_at(rects[3:7],(7,242,169))
-
-        #DOWN
-        self.images_player_down = self.ss_player.images_at(rects[7:11],(7,242,169))
-
-        #UP
-        self.images_player_up = self.ss_player.images_at(rects[11:15],(7,242,169))
+        self.ss_player = SpriteSheet(path.join('resources','player.png'))
 
         #Create instances
-        self.player=Player(0,0,FRAME_SIZE,FRAME_SIZE,4)
+        self.player=Player(0*FRAME_SIZE,0*FRAME_SIZE,FRAME_SIZE,FRAME_SIZE,4,self.ss_player)
 
         pygame.display.set_icon(self.logo)
         pygame.display.set_caption("Grin Route")
@@ -94,18 +166,14 @@ class Game:
     def create(self):
         #First draw
         self.screen.fill(SCREEN_BACKGROUND_COLOR) 
-        self.printGrid()
-        
-        pygame.draw.rect(self.screen, COLOR_RED, (self.player.x, self.player.y, self.player.width, self.player.height))  
-
-        pos_x = 5 * FRAME_SIZE
-        pos_y = 10 * FRAME_SIZE
-        self.screen.blit(self.semaph_red,(pos_x,pos_y))
+        self.printScenario(DEBUG)
         pygame.display.update()
 
     def update(self):
-        c = 0
-        images_player = self.images_player_right
+        c = 1
+        path = [Direction.DOWN,Direction.DOWN,Direction.DOWN,Direction.DOWN,Direction.RIGHT,Direction.RIGHT,Direction.UP,Direction.RIGHT]
+        self.player.direction = path.pop(0)
+
         while not self.gameover:
             pygame.time.delay(DELAY)
             for event in pygame.event.get():
@@ -114,34 +182,30 @@ class Game:
             
             keys = pygame.key.get_pressed()
             if keys[pygame.K_LEFT]:
-                self.player.x -= self.player.vel
-                images_player = self.images_player_left
+                pass
             if keys[pygame.K_RIGHT]:
-                self.player.x += self.player.vel
-                images_player = self.images_player_right
-            if keys[pygame.K_UP]:
-                images_player = self.images_player_up
-                self.player.y -= self.player.vel
-            if keys[pygame.K_DOWN]:
-                images_player = self.images_player_down
-                self.player.y += self.player.vel
-            
+                pass
+
             self.screen.fill(SCREEN_BACKGROUND_COLOR)
-            self.printGrid()
-            pos_x = 5 * FRAME_SIZE
-            pos_y = 10 * FRAME_SIZE
-            self.screen.blit(self.semaph_red,(pos_x,pos_y))
+            self.printScenario(DEBUG)
 
-            pos_x = 24 * FRAME_SIZE
-            pos_y = 24 * FRAME_SIZE
-            self.screen.blit(self.semaph_green,(pos_x,pos_y))
-
-            self.screen.blit(images_player[c],(self.player.x, self.player.y))
-            n_player = len(images_player)
-            if c < n_player - 1:
+            move = True
+            if len(path) > 0:
+                if c == 8:
+                    self.player.direction = path.pop(0)
+                    move = False
+                    self.player.stop()
+                    c = 1
                 c += 1
             else:
-                c = 0
+                move = False
+                c = 1
+            
+            if move:
+                self.player.move()
+            
+            
+            self.player.blit_on(self.screen,DEBUG)
             pygame.display.update()
 
 
