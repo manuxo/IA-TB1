@@ -156,12 +156,9 @@ class Game:
         pygame.display.update()
 
     def update(self):
-        path = [Direction.DOWN,Direction.DOWN,Direction.DOWN,Direction.DOWN,\
-            Direction.RIGHT,Direction.RIGHT,Direction.UP,Direction.RIGHT,Direction.RIGHT,\
-            Direction.RIGHT,Direction.DOWN,Direction.LEFT,Direction.LEFT,Direction.DOWN,Direction.DOWN,\
-            Direction.UP,Direction.UP,Direction.LEFT,Direction.LEFT,Direction.DOWN,Direction.DOWN]
+        path = []
         c = 1
-        move = path.pop(0)
+        move = None
         currentTarget = None
 
         while not self.gameover:
