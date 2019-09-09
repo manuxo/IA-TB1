@@ -20,7 +20,7 @@ COLOR_BLUE = (0,0,255)
 COLOR_GREEN = (7, 138, 35)
 COLOR_ROAD = (48,51,49)
 DELAY = 50
-DEBUG = True
+DEBUG = False
 PLAYER_COLORKEY = (69,242,39)
 
 
@@ -171,7 +171,7 @@ class Game:
 
     def update(self):
         c = 1
-        path = [Direction.DOWN,Direction.DOWN,Direction.DOWN,Direction.DOWN,Direction.RIGHT,Direction.RIGHT,Direction.UP,Direction.RIGHT]
+        path = [Direction.DOWN,Direction.RIGHT,Direction.RIGHT,Direction.UP,Direction.RIGHT]
         self.player.direction = path.pop(0)
 
         while not self.gameover:

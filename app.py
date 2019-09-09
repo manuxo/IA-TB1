@@ -16,6 +16,7 @@ SCREEN_BACKGROUND_COLOR = (48,51,49)
 FRAME_SIZE = 32
 N_FRAMES = GAME_WIDTH // FRAME_SIZE
 COLOR_RED = (255,0,0)
+COLOR_SKYBLUE = (7, 218, 230)
 COLOR_BLUE = (0,0,255)
 COLOR_GREEN = (7, 138, 35)
 COLOR_ROAD = (48,51,49)
@@ -91,28 +92,44 @@ class Game:
             self.scenario = [[0 for i in range(N_FRAMES)] for j in range(N_FRAMES)] 
             for i,row in enumerate(reader):
                 for j,gridValue in enumerate(row):
-                    self.scenario[i][j] = int(gridValue)
-            for row in self.scenario:
-                print(row)
-
+                    pos_x = i * FRAME_SIZE
+                    pos_y = j * FRAME_SIZE
+                    self.scenario[i][j] = (int(gridValue),pygame.Rect(pos_x,pos_y,FRAME_SIZE,FRAME_SIZE))
         csvFile.close()
+
+    def getScenarioRects(self):
+        n = N_FRAMES ** 2
+        num_columns = N_FRAMES
+        rects = [None] * n
+        for index in range(n):
+            x = index % num_columns
+            y = index // num_columns
+            _,rects[index] = self.scenario[x][y]
+        return rects
+
+
+    def getCoordsFromScenarioRectsIndex(self,rectIndex):
+        num_columns = N_FRAMES
+        x = rectIndex % num_columns
+        y = rectIndex // num_columns
+        return (x,y)
 
     def printScenario(self,debug = False):
         for i in range(N_FRAMES):
             for j in range(N_FRAMES):
-                value = self.scenario[i][j]
-                pos_x = i * FRAME_SIZE
-                pos_y = j * FRAME_SIZE
+                value,rect = self.scenario[i][j]
                 if value == GridItemType.ROAD:
-                    pygame.draw.rect(self.screen,COLOR_ROAD,(pos_x,pos_y,FRAME_SIZE,FRAME_SIZE))
+                    pygame.draw.rect(self.screen,COLOR_ROAD,rect)
                 elif value == GridItemType.GROUND:
-                    pygame.draw.rect(self.screen,COLOR_GREEN,(pos_x,pos_y,FRAME_SIZE,FRAME_SIZE))
+                    pygame.draw.rect(self.screen,COLOR_GREEN,rect)
                 elif value == GridItemType.SEMAPH_GREEN:
-                    self.screen.blit(self.semaph_green,(pos_x,pos_y))
+                    self.screen.blit(self.semaph_green,(rect.x,rect.y))
                 elif value == GridItemType.SEMAPH_RED:
-                    self.screen.blit(self.semaph_red,(pos_x,pos_y))
+                    self.screen.blit(self.semaph_red,(rect.x,rect.y))
+                elif value == GridItemType.TARGET:
+                    pygame.draw.rect(self.screen,COLOR_SKYBLUE,rect)
                 if debug:
-                    pygame.draw.rect(self.screen,COLOR_RED,(pos_x,pos_y,FRAME_SIZE,FRAME_SIZE),1)
+                    pygame.draw.rect(self.screen,COLOR_RED,rect,1)
 
     def preload(self):
         #Init game
@@ -127,7 +144,7 @@ class Game:
         self.ss_player = SpriteSheet(path.join('resources','player.png'))
 
         #Create instances
-        self.player=Player(0*FRAME_SIZE,0*FRAME_SIZE,FRAME_SIZE,FRAME_SIZE,3.889,self.ss_player)
+        self.player=Player(0*FRAME_SIZE,0*FRAME_SIZE,FRAME_SIZE,FRAME_SIZE,4,self.ss_player)
 
         pygame.display.set_icon(self.logo)
         pygame.display.set_caption("Grin Route")
@@ -139,14 +156,13 @@ class Game:
         pygame.display.update()
 
     def update(self):
-        c = 1
-        #path=[]
-        
         path = [Direction.DOWN,Direction.DOWN,Direction.DOWN,Direction.DOWN,\
             Direction.RIGHT,Direction.RIGHT,Direction.UP,Direction.RIGHT,Direction.RIGHT,\
             Direction.RIGHT,Direction.DOWN,Direction.LEFT,Direction.LEFT,Direction.DOWN,Direction.DOWN,\
             Direction.UP,Direction.UP,Direction.LEFT,Direction.LEFT,Direction.DOWN,Direction.DOWN]
-        
+        c = 1
+        move = path.pop(0)
+        currentTarget = None
 
         while not self.gameover:
             pygame.time.delay(DELAY)
@@ -159,35 +175,42 @@ class Game:
                     mx,my=pygame.mouse.get_pos()
                     mx=int(mx/32)*32
                     my=int(my/32)*32
-                    print (mx,my)
+                    
+                    mouseRect = pygame.Rect(mx,my,FRAME_SIZE,FRAME_SIZE)
+                    scenarioRects = self.getScenarioRects()
+                    collideIndex = mouseRect.collidelist(scenarioRects)
+                    print(f'collide index: {collideIndex}')
+                    x,y = self.getCoordsFromScenarioRectsIndex(collideIndex)
+                    print(f'coords: {x,y}')
+                    gridType,_ = self.scenario[x][y]
+                    print(f'gridType: {gridType}')
+
+                    if gridType is GridItemType.ROAD:
+                        _,r = self.scenario[x][y]
+                        self.scenario[x][y] = (GridItemType.TARGET,r)
+                        if currentTarget is not None:
+                            a,b = currentTarget
+                            _,d = self.scenario[a][b]
+                            self.scenario[a][b] = (1,d)
+                        currentTarget = (x,y)
+
                 
-            
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_LEFT]:
-                pass
-            if keys[pygame.K_RIGHT]:
-                pass
+            #keys = pygame.key.get_pressed()
 
             self.screen.fill(SCREEN_BACKGROUND_COLOR)
             self.printScenario(DEBUG)
 
-            move = True
-            if path != None and len(path) > 0:
-                if c == 10:
-                    self.player.direction = path.pop(0)
-                    move = False
-                    self.player.stop()
-                    c = 1
-                c += 1
-            else:
-                move = False
-                c = 1
-            
-            if move:
-                self.player.move()
-            
-            
             self.player.blit_on(self.screen,DEBUG)
+            if c == 9:
+                if len(path) > 0:
+                    move = path.pop(0)
+                else:
+                    move = None
+                c = 1
+            if move is not None:
+                self.player.direction = move
+                self.player.move()
+            c += 1
             pygame.display.update()
 
 
