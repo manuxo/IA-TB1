@@ -1,5 +1,6 @@
 # import the pygame module, so you can use it
 import pygame
+from colorama import init,Back
 import csv
 from random import choice
 from os import path
@@ -62,7 +63,26 @@ class Player(GridItem):
             pygame.draw.rect(screen,COLOR_BLUE,(self.x,self.y,FRAME_SIZE,FRAME_SIZE),1)
 
     
-
+def printPath(scenario):
+    init(convert=True)
+    n = len(scenario)
+    for i in range(n):
+        k = len(scenario[i])
+        for j in range(k):
+            value = scenario[i][j]
+            background = Back.BLACK
+            if value == 10:
+                background = Back.MAGENTA
+            elif value == 11:
+                background = Back.CYAN
+            elif value == 2:
+                background = Back.BLUE
+            elif value == 3:
+                background = Back.GREEN
+            elif value == 4:
+                background = Back.RED
+            print(background + '  ', end = '')
+        print('')
 
 class Game:
     def __init__(self):
@@ -167,9 +187,8 @@ class Game:
                     mouseRect = pygame.Rect(mx,my,FRAME_SIZE,FRAME_SIZE)
                     scenarioRects = self.getScenarioRects()
                     collideIndex = mouseRect.collidelist(scenarioRects)
-                    print(f'collide index: {collideIndex}')
                     x,y = self.getCoordsFromScenarioRectsIndex(collideIndex)
-                    print(f'coords: {x,y}')
+                    print(f'target: {x,y}')
                     gridType,_ = self.scenario[x][y]
                     print(f'gridType: {gridType}')
 
@@ -183,11 +202,8 @@ class Game:
                         currentTarget = (x,y)
 
                         scenario = self.getValueMatrix()
-                        for row in scenario:
-                            print(row)
                         start = (self.player.y // FRAME_SIZE,self.player.x // FRAME_SIZE)
-                        print(len(scenario))
-                        p = astar(scenario,start,(y,x),Node.Manhattan)
+                        p,evaluated = astar(scenario,start,(y,x),Node.Manhattan)
                         npath = len(p)
                         for i in range(npath - 1):
                             y1,x1 = p[i]
@@ -202,6 +218,15 @@ class Game:
                                 path.append(Direction.DOWN)
                             elif dify < 0:
                                 path.append(Direction.UP)
+                           
+                        for step in evaluated:
+                            i,j = step
+                            scenario[i][j] = 11
+                        for step in p:
+                            i,j = step
+                            scenario[i][j] = 10
+                        printPath(scenario)
+
 
 
 

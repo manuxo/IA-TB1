@@ -17,6 +17,9 @@ def astar(scenario,start,target,heuristic):
     n = len(scenario)
     #heapq works with tuples, in this case we add f() to sort this list in heap
     heapq.heappush(opened,startNode)
+
+    evaluated = []
+
     while len(opened) > 0:
         #heappop returns the smallest Node by f() value
         currentNode = heapq.heappop(opened)
@@ -27,7 +30,7 @@ def astar(scenario,start,target,heuristic):
             while current is not None:
                 path.append(current.position)
                 current = current.parent
-            return path[::-1]
+            return path[::-1],evaluated
         
         successors = []
         #Get all successors of current node
@@ -44,7 +47,9 @@ def astar(scenario,start,target,heuristic):
             if scenario[coordX][coordY] != GridItemType.ROAD and scenario[coordX][coordY] != GridItemType.SEMAPH_GREEN \
                 and scenario[coordX][coordY] != GridItemType.TARGET:
                 continue
-            
+
+            evaluated.append((coordX,coordY))
+
             #Append the new node to successors
             newNode = Node(currentNode,(coordX,coordY))
             successors.append(newNode)
