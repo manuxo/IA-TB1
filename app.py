@@ -6,26 +6,10 @@ from os import path
 
 
 #TB1 Modules
+from tb1util.Constants import *
 from tb1util.Enums import GridItemType,Direction
 from tb1util.Spritesheet import SpriteSheet
-
-
-#Constants
-GAME_WIDTH = GAME_HEIGHT = 800
-SCREEN_BACKGROUND_COLOR = (48,51,49)
-FRAME_SIZE = 32
-N_FRAMES = GAME_WIDTH // FRAME_SIZE
-COLOR_RED = (255,0,0)
-COLOR_SKYBLUE = (7, 218, 230)
-COLOR_BLUE = (0,0,255)
-COLOR_GREEN = (7, 138, 35)
-COLOR_ROAD = (48,51,49)
-DELAY = 50
-DEBUG = True
-PLAYER_COLORKEY = (69,242,39)
-
-
-
+from Astar import astar,Node
 
 class GridItem:
     def __init__(self,x,y,width,height):
@@ -114,6 +98,14 @@ class Game:
         y = rectIndex // num_columns
         return (x,y)
 
+
+    def getValueMatrix(self):
+        matrix = [[0 for i in range(N_FRAMES)] for j in range(N_FRAMES)]
+        for i in range(N_FRAMES):
+            for j in range(N_FRAMES):
+                matrix[i][j],_ = self.scenario[j][i]
+        return matrix
+
     def printScenario(self,debug = False):
         for i in range(N_FRAMES):
             for j in range(N_FRAMES):
@@ -166,9 +158,8 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.gameover = True
-
                 # click event and get the position
-                if event.type ==pygame.MOUSEBUTTONDOWN:
+                if event.type ==pygame.MOUSEBUTTONDOWN and move is None:
                     mx,my=pygame.mouse.get_pos()
                     mx=int(mx/32)*32
                     my=int(my/32)*32
@@ -190,6 +181,29 @@ class Game:
                             _,d = self.scenario[a][b]
                             self.scenario[a][b] = (1,d)
                         currentTarget = (x,y)
+
+                        scenario = self.getValueMatrix()
+                        for row in scenario:
+                            print(row)
+                        start = (self.player.y // FRAME_SIZE,self.player.x // FRAME_SIZE)
+                        print(len(scenario))
+                        p = astar(scenario,start,(y,x),Node.Manhattan)
+                        npath = len(p)
+                        for i in range(npath - 1):
+                            y1,x1 = p[i]
+                            y2,x2 = p[i+1]
+                            difx = x2 - x1
+                            dify = y2 - y1
+                            if difx > 0:
+                                path.append(Direction.RIGHT)
+                            elif difx < 0:
+                                path.append(Direction.LEFT)
+                            elif dify > 0:
+                                path.append(Direction.DOWN)
+                            elif dify < 0:
+                                path.append(Direction.UP)
+
+
 
                 
             #keys = pygame.key.get_pressed()
